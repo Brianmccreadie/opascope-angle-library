@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { supabaseAdmin } from '@/lib/supabase-server';
-import { buildGenerationSystemPrompt } from '@/lib/prompts';
-import { buildBriefPrompt } from '@/lib/prompts';
+import { buildGenerationSystemPrompt, buildBriefPrompt } from '@/lib/prompts';
+import { loadAllTrainingForClient } from '@/lib/training-loader';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -45,11 +45,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No products found' }, { status: 404 });
     }
 
+    // Load real training data from files
+    const trainingData = loadAllTrainingForClient(client.slug);
+
     const systemPrompt = buildGenerationSystemPrompt(
       client,
       segments || [],
       products
-    );
+    ) + '\n\n' + trainingData;
 
     let userPrompt: string;
     if (product_id) {
