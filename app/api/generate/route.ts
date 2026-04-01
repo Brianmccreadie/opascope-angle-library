@@ -48,11 +48,25 @@ export async function POST(request: NextRequest) {
     // Load real training data from files
     const trainingData = loadAllTrainingForClient(client.slug);
 
+    // Load rejection history for this client to avoid similar angles
+    const { data: rejections } = await supabaseAdmin
+      .from('rejections')
+      .select('angle_title, feedback')
+      .eq('client_id', client_id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    let rejectionContext = '';
+    if (rejections && rejections.length > 0) {
+      rejectionContext = '\n\n## REJECTED ANGLES — LEARN FROM THESE\nThe following angles were previously rejected by the team. Use this feedback to avoid similar mistakes and improve your output:\n' +
+        rejections.map((r) => `- "${r.angle_title}" — Rejected because: ${r.feedback}`).join('\n');
+    }
+
     const systemPrompt = buildGenerationSystemPrompt(
       client,
       segments || [],
       products
-    ) + '\n\n' + trainingData;
+    ) + '\n\n' + trainingData + rejectionContext;
 
     let userPrompt: string;
     if (product_id) {
@@ -68,8 +82,8 @@ For each product, vary the awareness stages, segments, and psychology principles
     }
 
     const message = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 8192,
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 16384,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     });

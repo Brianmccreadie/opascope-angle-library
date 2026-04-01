@@ -9,6 +9,8 @@ import AngleCard from '@/components/AngleCard';
 import AngleDetailModal from '@/components/AngleDetailModal';
 import GenerateModal from '@/components/GenerateModal';
 import AngleForm from '@/components/AngleForm';
+import { buildBriefPrompt } from '@/lib/prompts';
+import Link from 'next/link';
 
 export default function Home() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -102,9 +104,53 @@ export default function Home() {
     });
   };
 
+  const [bulkCopied, setBulkCopied] = useState(false);
+
   const handleSearch = useCallback((q: string) => {
     setSearch(q);
   }, []);
+
+  const handleBulkCopy = async () => {
+    const selectedAngles = angles.filter((a) => selectedIds.has(a.id));
+    if (selectedAngles.length === 0) return;
+
+    const prompts = selectedAngles.map((angle) => {
+      const hooks = (angle.hooks || []).map((h: unknown) => {
+        if (typeof h === 'string') return h;
+        if (h && typeof h === 'object' && 'hook' in h) return (h as { hook: string }).hook;
+        return String(h);
+      });
+
+      return angle.brief_prompt || buildBriefPrompt(
+        angle.client?.name || 'Client',
+        angle.product?.name || 'Product',
+        angle.title,
+        angle.description,
+        hooks,
+        (angle.segment_tags || []) as string[],
+        angle.awareness_stage,
+        (angle.psychology_tags || []) as string[]
+      );
+    });
+
+    const combined = prompts.map((p, i) => `--- BRIEF ${i + 1} of ${prompts.length} ---\n\n${p}`).join('\n\n\n');
+    await navigator.clipboard.writeText(combined);
+
+    // Mark all selected as briefed
+    await Promise.all(
+      selectedAngles.map((a) =>
+        fetch(`/api/angles/${a.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brief_copied: true }),
+        })
+      )
+    );
+
+    setBulkCopied(true);
+    setTimeout(() => setBulkCopied(false), 2000);
+    fetchAngles();
+  };
 
   return (
     <div className="min-h-screen bg-[#f8f9fb]">
@@ -120,6 +166,22 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/all"
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+            >
+              🌐 All Brands
+            </Link>
+            {selectedIds.size > 0 && (
+              <button
+                onClick={handleBulkCopy}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-emerald-700 hover:shadow-md"
+              >
+                {bulkCopied
+                  ? `✓ Copied ${selectedIds.size} Briefs!`
+                  : `📋 Bulk Copy Prompts (${selectedIds.size})`}
+              </button>
+            )}
             <button
               onClick={() => setShowAddForm(true)}
               className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
@@ -208,6 +270,7 @@ export default function Home() {
                 onClick={() => setSelectedAngle(angle)}
                 selected={selectedIds.has(angle.id)}
                 onToggleSelect={toggleSelect}
+                onRejected={fetchAngles}
               />
             ))}
           </div>
@@ -219,6 +282,7 @@ export default function Home() {
         <AngleDetailModal
           angle={selectedAngle}
           onClose={() => setSelectedAngle(null)}
+          onBriefCopied={fetchAngles}
         />
       )}
 

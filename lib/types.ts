@@ -40,6 +40,7 @@ export interface Angle {
   awareness_stage: 'symptom' | 'problem' | 'solution' | 'product' | 'offer' | null;
   status: 'untested' | 'testing' | 'winner' | 'fatigued' | 'retired';
   brief_prompt: string | null;
+  brief_copied: boolean;
   created_at: string;
   updated_at: string;
   product?: Product;

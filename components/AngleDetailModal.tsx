@@ -7,6 +7,7 @@ import { buildBriefPrompt } from '@/lib/prompts';
 interface AngleDetailModalProps {
   angle: Angle;
   onClose: () => void;
+  onBriefCopied?: () => void;
 }
 
 const STAGE_COLORS: Record<string, string> = {
@@ -28,13 +29,19 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AngleDetailModal({
   angle,
   onClose,
+  onBriefCopied,
 }: AngleDetailModalProps) {
   const [copied, setCopied] = useState(false);
 
   const productColor = angle.product?.color || '#8b5cf6';
   const segmentTags = (angle.segment_tags || []) as string[];
   const psychologyTags = (angle.psychology_tags || []) as string[];
-  const hooks = (angle.hooks || []) as string[];
+  // hooks can be strings or objects with a .hook property
+  const hooks = (angle.hooks || []).map((h: unknown) => {
+    if (typeof h === 'string') return h;
+    if (h && typeof h === 'object' && 'hook' in h) return (h as { hook: string }).hook;
+    return String(h);
+  });
 
   const handleCopyBrief = () => {
     const prompt =
@@ -53,6 +60,13 @@ export default function AngleDetailModal({
     navigator.clipboard.writeText(prompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+
+    // Mark angle as briefed
+    fetch(`/api/angles/${angle.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief_copied: true }),
+    }).then(() => onBriefCopied?.());
   };
 
   return (

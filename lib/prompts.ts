@@ -170,39 +170,24 @@ export function buildBriefPrompt(
   awarenessStage: string | null,
   psychologyTags: string[]
 ): string {
-  return `Create a performance creative brief for ${client} — ${product}.
+  return `The final brief should be pushed to Notion in the approved template formatting that you have been trained on.
+
+Before proceeding, confirm the following intake questions (if not already clear from context):
+1. What format is this brief for? (Image, Video, GIF, Carousel, etc.)
+2. How many variations are needed?
+3. Do you want alt copy suggestions for each element, or just one copy piece per element?
+
+Once confirmed, create a performance creative brief for ${client} — ${product}.
 
 ## Angle
 **Title:** ${title}
 **Description:** ${description}
-**Example Hooks:** 
-${hooks.map((h, i) => `${i + 1}. ${h}`).join('\n')}
-
-## Targeting
-**Segments:** ${segmentTags.join(', ')}
 **Awareness Stage:** ${awarenessStage || 'Not specified'}
+**Target Segments:** ${segmentTags.join(', ')}
 **Psychology Principles:** ${psychologyTags.join(', ')}
 
-## Required Training & Playbooks
-Apply ALL of the following training to this brief:
+**Example Hooks:**
+${hooks.map((h, i) => `${i + 1}. ${h}`).join('\n')}
 
-1. **Performance Creative Copy Training** — Clarity over cleverness. Run all copy through the Fluff Filter (7-point self-edit). Verify the Balance Rule (conceptual headline → straightforward subheadline, never both conceptual). CTAs must be direct and specific (no "Learn More", "Discover", "Begin Your Journey").
-2. **Box Scaling Framework** — This is a ${awarenessStage || '[awareness stage]'}-stage angle. Match the copy structure, messaging depth, and proof points to this stage.
-3. **Hooks Guide** — Use relevant Makepeace hook frameworks. Each hook must have: visual hook + callout + curiosity driver.
-4. **Interesting Ads Playbook** — Balance entertainment and education. Front-load entertainment in the hook, layer education in the body.
-5. **${client} Brand Guidelines** — Follow brand voice, tone, visual direction, and any compliance/guardrail requirements.
-6. **${client} Messaging Blueprint** — Use approved features, benefits, and outcomes. Match language to the target segments.
-7. **${client} Segment Plan** — Tailor copy to the specific motivator + characteristic segment combination.
-
-## Brief Output Format
-Generate a complete creative brief with:
-- **Concept Name** — A short, memorable name for this creative concept
-- **Format Recommendation** — Static image, video (length), carousel, etc.
-- **Hook Options** — 3-5 hooks using different frameworks, with visual + copy hook descriptions
-- **Headline** — Primary text overlay (follow the Balance Rule)
-- **Subheadline** — Supporting text (must balance the headline per the Balance Rule)
-- **Body Copy / Primary Text** — Front-load the strongest benefit or proof point in the first line
-- **CTA** — Direct, specific, actionable
-- **Creative Direction Notes** — Visual style, mood, pacing, key scenes (for video), layout notes (for static)
-- **Targeting Notes** — Which segments this speaks to and why`;
+Apply all relevant training: Performance Creative Copy Training (Fluff Filter, Balance Rule, direct CTAs), Box Scaling Framework (${awarenessStage || '[awareness stage]'}-stage), Hooks Guide (Makepeace frameworks), Interesting Ads Playbook, and ${client} brand guidelines, messaging blueprint, and segment plan.`;
 }

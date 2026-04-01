@@ -3,11 +3,14 @@
 import { Angle } from '@/lib/types';
 import { useMemo } from 'react';
 
+import RejectButton from './RejectButton';
+
 interface AngleCardProps {
   angle: Angle;
   onClick: () => void;
   selected: boolean;
   onToggleSelect: (id: string) => void;
+  onRejected: () => void;
 }
 
 const MOTIVATOR_COLORS = ['#8b5cf6', '#6366f1', '#7c3aed'];
@@ -32,11 +35,16 @@ export default function AngleCard({
   onClick,
   selected,
   onToggleSelect,
+  onRejected,
 }: AngleCardProps) {
   const displayHook = useMemo(() => {
     if (!angle.hooks || angle.hooks.length === 0) return null;
     const idx = Math.floor(Math.random() * angle.hooks.length);
-    return angle.hooks[idx];
+    const hook = angle.hooks[idx];
+    // hooks can be strings or objects with a .hook property
+    if (typeof hook === 'string') return hook;
+    if (hook && typeof hook === 'object' && 'hook' in hook) return (hook as { hook: string }).hook;
+    return String(hook);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [angle.id]);
 
@@ -50,22 +58,32 @@ export default function AngleCard({
       onClick={onClick}
     >
       <div className="flex items-start justify-between mb-3">
-        <span
-          className="inline-block rounded-md px-2 py-0.5 text-xs font-bold text-white"
-          style={{ backgroundColor: productColor }}
-        >
-          {angle.product?.short_code || '???'}
-        </span>
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggleSelect(angle.id);
-          }}
-          onClick={(e) => e.stopPropagation()}
-          className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-        />
+        <div className="flex items-center gap-1.5">
+          <span
+            className="inline-block rounded-md px-2 py-0.5 text-xs font-bold text-white"
+            style={{ backgroundColor: productColor }}
+          >
+            {angle.product?.short_code || '???'}
+          </span>
+          {angle.brief_copied && (
+            <span className="inline-block rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 border border-emerald-200">
+              ✓ Briefed
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <RejectButton angle={angle} onRejected={onRejected} />
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={(e) => {
+              e.stopPropagation();
+              onToggleSelect(angle.id);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+          />
+        </div>
       </div>
 
       <h3 className="text-base font-bold text-gray-900 leading-snug mb-2 line-clamp-2">

@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     .from('angles')
     .select('*, product:products(*), client:clients(*)');
 
+  // When no client_id is provided, return all angles (for All Brands view)
   if (clientId) {
     query = query.eq('client_id', clientId);
   }
